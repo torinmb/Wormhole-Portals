@@ -4,7 +4,7 @@
 http://spiro.fisica.unipd.it/~antonell/schwarzschild/
 
 #Efficient Space Distortion
-https://www.shadertoy.com/view/Mds3DM
+https://www.shadertoy.com/view/4d3SW4
 
 #Fancy Space Distortion (starts from nothing)
 http://christopheremoore.net/black-hole-skymap/
