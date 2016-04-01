@@ -126,9 +126,9 @@ var boxWidth = 300;
 var dat = new Uint8Array(16*16*3);
 for (var i = 0; i < dat.length; i+=3 )
 {
-	dat[ i + 0 ] = Math.sin(i/100.0) * 255.0;
+	dat[ i + 0 ] = Math.sin(i/150.0) * 255.0;
 	dat[ i + 1 ] = Math.sin(Math.pow(i/20003.0, 2.0)) * 255.0;
-	dat[ i + 2 ] = Math.sin(i/408.0 + 4.0) * 255.0;
+	dat[ i + 2 ] = Math.sin(i/508.0 + 4.0) * 255.0;
 }
 
 var datTex = new THREE.DataTexture( dat, 16, 16, THREE.RGBFormat);
@@ -176,26 +176,25 @@ renderCam.position.z = 1;
 var renderScene = new THREE.Scene();
 var rTarget = new THREE.WebGLRenderTarget( window.innerWidth, 
 	window.innerHeight, { minFilter: THREE.LinearFilter,
-						  magFilter: THREE.NearestFilter,
+						  magFilter: THREE.LinearMipMapLinearFilter,
+              anisotropy: 4,
 						  format: THREE.RGBFormat } );
 var renderPlane = new THREE.PlaneBufferGeometry( window.innerWidth, window.innerHeight );
-
 var shaderMat = new THREE.ShaderMaterial( { 
 	uniforms: { firstPass: { type: "t", value: rTarget },
 	wormholePos: { type: "v3", value: cube.position },
-	resolution: { type: "v2", value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+	resolution: { type: "v2", value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+  originalProjMatrix: { type: "m4", value: camera.projectionMatrix },
+  originalModelMatrix: { type: "m4", value: camera.matrixWorldInverse }
 	},
 	vertexShader: vertex(),
 	fragmentShader: fragPassTwo()
 	} );
-//alert(vertex());
+
 var plane = new THREE.Mesh( renderPlane, shaderMat);
 plane.position.z = -1;
-//	shaderMat );
 renderScene.add( plane );
-//renderScene.add( skybox );
-//scene.add(plane);
-//renderScene.add( cube );
+
 
 // Request animation frame loop function
 var lastRender = 0;
