@@ -65,8 +65,9 @@ WebVRConfig = {
 <!--
   A polyfill for Promises. Needed for IE and Edge.
   -->
+  <!--
 <script src="node_modules/es6-promise/dist/es6-promise.js"></script>
-
+-->
 <!--
   three.js 3d library
   -->
@@ -91,6 +92,8 @@ WebVRConfig = {
   Helps enter and exit VR mode, provides best practices while in VR.
   -->
 <script src="build/webvr-manager.js"></script>
+
+<script src="ShaderSource.js"></script>
 
 
 <script>
@@ -117,14 +120,14 @@ effect.setSize(window.innerWidth, window.innerHeight);
 
 
 // Add a repeating grid as a skybox.
-var boxWidth = 3;
+var boxWidth = 300;
 //var loader = new THREE.TextureLoader();
 //loader.load('img/box.png', onTextureLoaded);
 var dat = new Uint8Array(16*16*3);
 for (var i = 0; i < dat.length; i+=3 )
 {
 	dat[ i + 0 ] = Math.sin(i/100.0) * 255.0;
-	dat[ i + 1 ] = Math.sin(Math.pow(i/20003.0,2.0)) * 255.0;
+	dat[ i + 1 ] = Math.sin(Math.pow(i/20003.0, 2.0)) * 255.0;
 	dat[ i + 2 ] = Math.sin(i/408.0 + 4.0) * 255.0;
 }
 
@@ -135,13 +138,13 @@ datTex.needsUpdate = true;
 datTex.magFilter = THREE.NearestFilter;
 datTex.wrapS = THREE.RepeatWrapping;
 datTex.wrapT = THREE.RepeatWrapping;
-datTex.repeat.set(boxWidth, boxWidth);
+datTex.repeat.set(3, 3);
 
   var geometry = new THREE.BoxGeometry(boxWidth, boxWidth, boxWidth);
   var material = new THREE.MeshBasicMaterial({
     map: datTex,
   //  color: 0xffffff,
-    side: THREE.BackSide
+    side: THREE.DoubleSide
   });
 
   var skybox = new THREE.Mesh(geometry, material);
@@ -157,9 +160,9 @@ var params = {
 var manager = new WebVRManager(renderer, effect, params);
 
 // Create 3D objects.
-var geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-var material = new THREE.MeshNormalMaterial();
-var cube = new THREE.Mesh(geometry, material);
+var bGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+var bMaterial = new THREE.MeshNormalMaterial();
+var cube = new THREE.Mesh(bGeometry, bMaterial);
 
 // Position cube mesh
 cube.position.z = -1;
@@ -167,6 +170,32 @@ cube.position.z = -1;
 
 // Add cube mesh to your three.js scene
 scene.add(cube);
+
+var renderCam = new THREE.OrthographicCamera(  window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -10000, 10000 );
+renderCam.position.z = 1;
+var renderScene = new THREE.Scene();
+var rTarget = new THREE.WebGLRenderTarget( window.innerWidth, 
+	window.innerHeight, { minFilter: THREE.LinearFilter,
+						  magFilter: THREE.NearestFilter,
+						  format: THREE.RGBFormat } );
+var renderPlane = new THREE.PlaneBufferGeometry( window.innerWidth, window.innerHeight );
+
+var shaderMat = new THREE.ShaderMaterial( { 
+	uniforms: { firstPass: { type: "t", value: rTarget },
+	wormholePos: { type: "v3", value: cube.position },
+	resolution: { type: "v2", value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+	},
+	vertexShader: vertex(),
+	fragmentShader: fragPassTwo()
+	} );
+//alert(vertex());
+var plane = new THREE.Mesh( renderPlane, shaderMat);
+plane.position.z = -1;
+//	shaderMat );
+renderScene.add( plane );
+//renderScene.add( skybox );
+//scene.add(plane);
+//renderScene.add( cube );
 
 // Request animation frame loop function
 var lastRender = 0;
@@ -181,8 +210,10 @@ function animate(timestamp) {
   controls.update();
 
   // Render the scene through the manager.
-  manager.render(scene, camera, timestamp);
+  renderer.render( scene, camera, rTarget);
 
+  manager.render(renderScene, renderCam, timestamp);
+ // manager.render(scene, camera, timestamp);
   requestAnimationFrame(animate);
 }
 
