@@ -94,6 +94,8 @@ WebVRConfig = {
 <script src="build/webvr-manager.js"></script>
 
 <script src="ShaderSource.js"></script>
+<script src="FlyControls.js"></script>
+<script src="OBJLoader.js"></script>
 
 
 <script>
@@ -105,14 +107,19 @@ renderer.setPixelRatio(window.devicePixelRatio);
 // Append the canvas element created by the renderer to document body element.
 document.body.appendChild(renderer.domElement);
 
-// Create a three.js scene.
-var scene = new THREE.Scene();
-
 // Create a three.js camera.
-var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+var camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 10000);
+camera.position.z =  50;//30;
 
 // Apply VR headset positional data to camera.
 var controls = new THREE.VRControls(camera);
+
+controlsFly = new THREE.FlyControls( camera );
+controlsFly.movementSpeed = 0.2;
+controlsFly.domElement = document.body;
+controlsFly.rollSpeed = Math.PI / 24;
+controlsFly.autoForward = false;
+controlsFly.dragToLook = false;
 
 // Apply VR stereo rendering to renderer.
 var effect = new THREE.VREffect(renderer);
@@ -121,9 +128,10 @@ effect.setSize(window.innerWidth, window.innerHeight);
 
 // Add a repeating grid as a skybox.
 var boxWidth = 300;
+var textureSize = 64;
 //var loader = new THREE.TextureLoader();
 //loader.load('img/box.png', onTextureLoaded);
-var dat = new Uint8Array(16*16*3);
+var dat = new Uint8Array(textureSize*textureSize*3);
 for (var i = 0; i < dat.length; i+=3 )
 {
 	dat[ i + 0 ] = Math.sin(i/150.0) * 255.0;
@@ -131,7 +139,7 @@ for (var i = 0; i < dat.length; i+=3 )
 	dat[ i + 2 ] = Math.sin(i/508.0 + 4.0) * 255.0;
 }
 
-var datTex = new THREE.DataTexture( dat, 16, 16, THREE.RGBFormat);
+var datTex = new THREE.DataTexture( dat, textureSize, textureSize, THREE.RGBFormat);
 datTex.needsUpdate = true;
 
 //function onTextureLoaded(texture) {
@@ -139,6 +147,10 @@ datTex.magFilter = THREE.NearestFilter;
 datTex.wrapS = THREE.RepeatWrapping;
 datTex.wrapT = THREE.RepeatWrapping;
 datTex.repeat.set(3, 3);
+
+
+// Create a three.js scene.
+var scene = new THREE.Scene();
 
   var geometry = new THREE.BoxGeometry(boxWidth, boxWidth, boxWidth);
   var material = new THREE.MeshBasicMaterial({
@@ -151,6 +163,14 @@ datTex.repeat.set(3, 3);
   scene.add(skybox);
 //}
 
+/*
+// model
+var loady = new THREE.OBJLoader(  );
+loady.load( 'resources/MountnN14_obj.obj', function ( object ) {
+    object.scale = 100;
+    scene.add( object );
+  } );
+*/
 
 // Create a VR manager helper to enter and exit VR mode.
 var params = {
@@ -159,17 +179,66 @@ var params = {
 };
 var manager = new WebVRManager(renderer, effect, params);
 
+
+//////////////////////////////
+
+
+  sceneO = new THREE.Scene();
+
+
+  // Middle Box
+  box = new THREE.BoxGeometry( 2.0, 2.0, 2.0 );
+  mat = new THREE.MeshPhongMaterial( { color: 0x0ff000, specular: 0x660066, emissive: 0xff00ff, shininess: 10, shading: THREE.SmoothShading} );
+  mesh = new THREE.Mesh( box, mat );
+  mesh.position.z = 0;
+//  sceneO.add( mesh );
+
+  var torus = new THREE.TorusKnotGeometry(2.0, 0.7, 128, 16);
+  var torMat = new THREE.MeshPhongMaterial( { color: 0x888888, specular: 0xaaaaaa, emissive: 0x555555, shininess: 2, shading: THREE.SmoothShading} );
+  var torMesh = new THREE.Mesh(torus, torMat);
+  sceneO.add(torMesh);
+  torMesh.position.x = 5.0;
+
+  // Room Box
+  var roomBox = new THREE.BoxGeometry( 30.0, 30.0, 30.0 ) ;
+  var roomMat = new THREE.MeshPhongMaterial( { color: 0x000022, specular: 0x222222, emissive: 0x330000, shininess: 10, shading: THREE.SmoothShading} );
+  roomMat.depthWrite = false;
+  roomMat.side = THREE.BackSide;
+  var roomMesh = new THREE.Mesh(roomBox,roomMat);
+  roomMesh.position.z = -0;
+  sceneO.add( roomMesh );
+
+  // Funky sphere
+  cubeCam = new THREE.CubeCamera( 0.3, 1000, 256 );
+  cubeCam.renderTarget.texture.minFilter = THREE.LinearMipMapLinearFilter;
+  sceneO.add(cubeCam);
+  var renderMat = new THREE.MeshBasicMaterial( {envMap: cubeCam.renderTarget } );
+ // var sphere = new THREE.Mesh(new THREE.SphereGeometry(5, 75, 55), renderMat);
+ // sceneO.add(sphere);
+//  sphere.position.x = -2.0;
+ // sphere.position.y =  6.5;
+//  sphere.position.z = -4.5;
+
+  var pointLight = new THREE.PointLight( 0xffffff, 1 );
+  sceneO.add(pointLight);
+  var pointLight2 = new THREE.PointLight( 0xffffff, 1 );
+  sceneO.add(pointLight2);
+
+
+  ///////////////////////////////
+
 // Create 3D objects.
-var bGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-var bMaterial = new THREE.MeshNormalMaterial();
-var cube = new THREE.Mesh(bGeometry, bMaterial);
 
-// Position cube mesh
-cube.position.z = -1;
+var sGeometry = new THREE.SphereGeometry(50, 200, 200);
+var sMaterial = new THREE.MeshNormalMaterial();
+var sphere = new THREE.Mesh(sGeometry, renderMat);
+
+// Position sphere mesh
+sphere.position.z = 0;
 
 
-// Add cube mesh to your three.js scene
-scene.add(cube);
+// Add sphere mesh to your three.js scene
+//scene.add(sphere);
 
 var renderCam = new THREE.OrthographicCamera(  window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -10000, 10000 );
 renderCam.position.z = 1;
@@ -182,10 +251,9 @@ var rTarget = new THREE.WebGLRenderTarget( window.innerWidth,
 var renderPlane = new THREE.PlaneBufferGeometry( window.innerWidth, window.innerHeight );
 var shaderMat = new THREE.ShaderMaterial( { 
 	uniforms: { firstPass: { type: "t", value: rTarget },
-	wormholePos: { type: "v3", value: cube.position },
+	wormholePos: { type: "v3", value: new THREE.Vector3(sphere.position.x, sphere.position.y, sphere.position.z) },
 	resolution: { type: "v2", value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-  originalProjMatrix: { type: "m4", value: camera.projectionMatrix },
-  originalModelMatrix: { type: "m4", value: camera.matrixWorldInverse }
+  camPosition: { type: "v3", value: camera.position },
 	},
 	vertexShader: vertex(),
 	fragmentShader: fragPassTwo()
@@ -194,6 +262,7 @@ var shaderMat = new THREE.ShaderMaterial( {
 var plane = new THREE.Mesh( renderPlane, shaderMat);
 plane.position.z = -1;
 renderScene.add( plane );
+renderScene.add( sphere );
 
 
 // Request animation frame loop function
@@ -202,16 +271,20 @@ function animate(timestamp) {
   var delta = Math.min(timestamp - lastRender, 500);
   lastRender = timestamp;
 
-  // Apply rotation to cube mesh
-  cube.rotation.y += delta * 0.0006;
+  // Apply rotation to sphere mesh
+ // sphere.rotation.y += delta * 0.0006;
 
   // Update VR headset position and apply to camera.
   controls.update();
+  controlsFly.update( delta );
 
   // Render the scene through the manager.
+  plane.material.uniforms.needsUpdate = true;
   renderer.render( scene, camera, rTarget);
 
-  manager.render(renderScene, renderCam, timestamp);
+  cubeCam.updateCubeMap( renderer, sceneO );
+
+  manager.render(renderScene, camera, timestamp);
  // manager.render(scene, camera, timestamp);
   requestAnimationFrame(animate);
 }

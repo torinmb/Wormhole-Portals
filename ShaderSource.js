@@ -5,7 +5,7 @@ function vertex() {
     var vertex = [
         'precision highp float;',
         'varying vec2 vUv;',
-        'varying vec2 WHlocation;',
+        'varying vec3 WHlocation;',
         'varying vec3 pos;',
         'uniform vec3 wormholePos;',
         'uniform vec2 resolution;',
@@ -17,9 +17,9 @@ function vertex() {
 
     //    'pos = position * 2.0;',
         '  vUv = uv;',
-        'vec4 temp = originalProjMatrix * originalModelMatrix * vec4( wormholePos, 1.0 );',
-        '  WHlocation = (temp.xy + 0.5) * resolution;',
-        '  gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+        'vec4 temp = projectionMatrix * modelViewMatrix * vec4( wormholePos, 0.5 );',
+        '  WHlocation = vec3(( 0.5 * temp.xy ) / temp.w + 0.5, temp.z) * vec3(resolution, 1.0);',
+        '  gl_Position = /*projectionMatrix * modelViewMatrix */ vec4( 2.0*position.xy / resolution, 1.0, 1.0 );',
 
         '}'
 
@@ -36,16 +36,22 @@ function fragPassTwo() {
 
         //'precision highp float;',
         'varying vec2 vUv;',
-        'varying vec2 WHlocation;',
+        'varying vec3 WHlocation;',
         'varying vec3 pos;',
         'uniform sampler2D firstPass;',
+        'uniform vec2 resolution;',
+        'uniform vec3 camPosition;',
+        'uniform vec3 wormholePos;',
 
         'void main() {',
 
-        'mediump vec2 test = vec2(0.0,0.0);',
        // 'vec2 warp = normalize(WHlocation - gl_FragCoord) * pow(distance(WHlocation, gl_FragCoord), -2.0) * 30.0;',
-        'vec2 warp = normalize(WHlocation - gl_FragCoord.xy) * pow(distance(WHlocation, gl_FragCoord.xy), -2.0) * 2500.0;',
+        'vec2 warp = vec2(0.0, 0.0);',
+        'if (WHlocation.z > 0.0) {',
+        'warp = normalize(WHlocation.xy - gl_FragCoord.xy) *' + 
+         'pow(distance(WHlocation.xy, gl_FragCoord.xy), -2.0) * 50000000000.0/pow(distance(camPosition,wormholePos),3.0);',
         // warp.y = -warp.y;
+        '}',
 
         '   gl_FragColor = texture2D( firstPass, (vUv + warp));',
 
