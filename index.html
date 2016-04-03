@@ -108,12 +108,13 @@ renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
 // Create a three.js camera.
-var camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 10000);
-camera.position.z =  50;//30;
+var camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.1, 10000);
+camera.position.z =  75;//30;
 
 // Apply VR headset positional data to camera.
 var controls = new THREE.VRControls(camera);
 
+// Movement controls
 controlsFly = new THREE.FlyControls( camera );
 controlsFly.movementSpeed = 0.2;
 controlsFly.domElement = document.body;
@@ -152,6 +153,7 @@ datTex.repeat.set(3, 3);
 // Create a three.js scene.
 var scene = new THREE.Scene();
 
+// 
   var geometry = new THREE.BoxGeometry(boxWidth, boxWidth, boxWidth);
   var material = new THREE.MeshBasicMaterial({
     map: datTex,
@@ -180,7 +182,7 @@ var params = {
 var manager = new WebVRManager(renderer, effect, params);
 
 
-//////////////////////////////
+///////////////Scene rendered to Purple sphere ////////////////////
 
 
   sceneO = new THREE.Scene();
@@ -225,9 +227,9 @@ var manager = new WebVRManager(renderer, effect, params);
   sceneO.add(pointLight2);
 
 
-  ///////////////////////////////
+  /////////////////////////////////////////////////////
 
-// Create 3D objects.
+// Add sphere
 
 var sGeometry = new THREE.SphereGeometry(50, 200, 200);
 var sMaterial = new THREE.MeshNormalMaterial();
@@ -236,19 +238,18 @@ var sphere = new THREE.Mesh(sGeometry, renderMat);
 // Position sphere mesh
 sphere.position.z = 0;
 
-
-// Add sphere mesh to your three.js scene
-//scene.add(sphere);
+// Create first pass render target
 
 var renderCam = new THREE.OrthographicCamera(  window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -10000, 10000 );
 renderCam.position.z = 1;
 var renderScene = new THREE.Scene();
-var rTarget = new THREE.WebGLRenderTarget( window.innerWidth, 
-	window.innerHeight, { minFilter: THREE.LinearFilter,
+var overRenderAmount = 1.3;
+var rTarget = new THREE.WebGLRenderTarget( window.innerWidth*overRenderAmount, 
+	window.innerHeight*overRenderAmount, { minFilter: THREE.LinearFilter,
 						  magFilter: THREE.LinearMipMapLinearFilter,
               anisotropy: 4,
 						  format: THREE.RGBFormat } );
-var renderPlane = new THREE.PlaneBufferGeometry( window.innerWidth, window.innerHeight );
+var renderPlane = new THREE.PlaneBufferGeometry( window.innerWidth*overRenderAmount, window.innerHeight*overRenderAmount);
 var shaderMat = new THREE.ShaderMaterial( { 
 	uniforms: { firstPass: { type: "t", value: rTarget },
 	wormholePos: { type: "v3", value: new THREE.Vector3(sphere.position.x, sphere.position.y, sphere.position.z) },
@@ -261,7 +262,9 @@ var shaderMat = new THREE.ShaderMaterial( {
 
 var plane = new THREE.Mesh( renderPlane, shaderMat);
 plane.position.z = -1;
+// The original scene, now with distortion
 renderScene.add( plane );
+// The sphere which will be rendered on top
 renderScene.add( sphere );
 
 

@@ -49,7 +49,7 @@ function fragPassTwo() {
         'vec2 warp = vec2(0.0, 0.0);',
         'if (WHlocation.z > 0.0) {',
         'warp = normalize(WHlocation.xy - gl_FragCoord.xy) *' + 
-         'pow(distance(WHlocation.xy, gl_FragCoord.xy), -2.0) * 50000000000.0/pow(distance(camPosition,wormholePos),3.0);',
+         'pow(distance(WHlocation.xy, gl_FragCoord.xy), -2.0) * 34000000000.0/pow(distance(camPosition,wormholePos),3.0);',
         // warp.y = -warp.y;
         '}',
 
