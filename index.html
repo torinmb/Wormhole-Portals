@@ -211,7 +211,7 @@ var manager = new WebVRManager(renderer, effect, params);
   sceneO.add( roomMesh );
 
   // Funky sphere
-  cubeCam = new THREE.CubeCamera( 0.3, 1000, 256 );
+  cubeCam = new THREE.CubeCamera( 0.3, 1000, 512 );
   cubeCam.renderTarget.texture.minFilter = THREE.LinearMipMapLinearFilter;
   sceneO.add(cubeCam);
   var renderMat = new THREE.MeshBasicMaterial( {envMap: cubeCam.renderTarget } );
@@ -234,11 +234,13 @@ var manager = new WebVRManager(renderer, effect, params);
 var sGeometry = new THREE.SphereGeometry(50, 200, 200);
 var sMaterial = new THREE.MeshNormalMaterial();
 var sphere = new THREE.Mesh(sGeometry, renderMat);
+sphere.scale = 4;
 
 // Position sphere mesh
 sphere.position.z = 0;
 
 // Create first pass render target
+var warpSize = 1.0;
 
 var renderCam = new THREE.OrthographicCamera(  window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -10000, 10000 );
 renderCam.position.z = 1;
@@ -251,10 +253,12 @@ var rTarget = new THREE.WebGLRenderTarget( window.innerWidth*overRenderAmount,
 						  format: THREE.RGBFormat } );
 var renderPlane = new THREE.PlaneBufferGeometry( window.innerWidth*overRenderAmount, window.innerHeight*overRenderAmount);
 var shaderMat = new THREE.ShaderMaterial( { 
-	uniforms: { firstPass: { type: "t", value: rTarget },
-	wormholePos: { type: "v3", value: new THREE.Vector3(sphere.position.x, sphere.position.y, sphere.position.z) },
-	resolution: { type: "v2", value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-  camPosition: { type: "v3", value: camera.position },
+	uniforms: { 
+    firstPass: { type: "t", value: rTarget },
+    size: { type: "f", value: warpSize },
+	  wormholePos: { type: "v3", value: new THREE.Vector3(sphere.position.x, sphere.position.y, sphere.position.z) },
+	  resolution: { type: "v2", value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+    camPosition: { type: "v3", value: camera.position },
 	},
 	vertexShader: vertex(),
 	fragmentShader: fragPassTwo()
@@ -267,6 +271,8 @@ renderScene.add( plane );
 // The sphere which will be rendered on top
 renderScene.add( sphere );
 
+var time = 0;
+
 
 // Request animation frame loop function
 var lastRender = 0;
@@ -276,6 +282,11 @@ function animate(timestamp) {
 
   // Apply rotation to sphere mesh
  // sphere.rotation.y += delta * 0.0006;
+  time += 1;
+  warpSize = 0.25*(Math.sin(time/60.0)+1.0005);
+  sphere.scale.x = sphere.scale.y = sphere.scale.z = warpSize;
+
+  plane.material.uniforms.size.value = warpSize;
 
   // Update VR headset position and apply to camera.
   controls.update();
